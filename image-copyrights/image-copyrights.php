@@ -3,7 +3,7 @@
 Plugin Name: Image Copyright
 Description: Inserts copyrights on images
 Version: 1.0
-Author: Ehsan Marufi
+Author: Ehsan Marufi azar
 */
 defined( 'ABSPATH' ) or die( 'No direct access please!' );
 
@@ -31,6 +31,7 @@ function display_image_copyrights_admin_screen() {
 	
 	if(isset($_POST['operation'])) {
 		$msgs = array();
+		$image_urls = [];
 		
 		switch($_POST['operation']) {
 			case 'file-upload':
@@ -86,17 +87,30 @@ function display_image_copyrights_admin_screen() {
 								break;
 						}
 						add_image_copyrights($image_path, $logo_image_path, $left_aligned_text, $right_aligned_text);
+						$image_urls[] = $image_url;
 					}
 				}
 			break;
 		}
-	foreach($msgs as $msg)
-		echo "<div>$msg</div>";
+		foreach($msgs as $msg) {
+			echo "<div>$msg</div>";
+		}
+		foreach($image_urls as $img_url) {
+			echo '<img src="'.$img_url.'" class="copyrighted-image">';
+		}
 	}
+	
 
 	?>
+	<style>
+		form#image-copyright-form label {display: block; margin-bottom: .25rem; }
+		form#image-copyright-form input { width: 100%; margin-bottom: 1rem; }
+		form#image-copyright-form { padding: 1rem; border: 1px solid lightgray; border-radius: .25rem; width: 30rem; }
+		form#image-copyright-form input[type="submit"] { margin-bottom: 0; color: blue; cursor: pointer; }
+		img.copyrighted-image { display: block; border: 1px solid gray; margin-bottom: 0.5rem; }
+	</style>
 	<h1>Upload files with copyrights attached</h1>
-	<form action="<?php echo $current_page_address; ?>" method="post"  enctype="multipart/form-data">
+	<form action="<?php echo $current_page_address; ?>" method="post"  enctype="multipart/form-data" id="image-copyright-form">
 		<div><label for="photographer-name">Photographer:</label><input type="text" name="photographer-name" id="photographer-name" placeholder="Name & FamilyName" /></div>
 		<div><label for="website-name">Website:</label><input type="text" name="website-name" id="website-name" placeholder="Website Name" /></div>
 		<input type="file" name="file-to-upload[]" multiple><br/>
@@ -225,8 +239,9 @@ function add_image_copyrights($source_image_path, $logo_image_path, $left_aligne
 	if(isset($options['font_path']))
 		$font_path = $options['font_path'];
 	
-
+	
 	$img_helper = new ImageHelper($source_image_path);
+	
 	$im = $img_helper->get_image(); // returns by reference
 	if(!$im) return false;
 	
@@ -236,9 +251,10 @@ function add_image_copyrights($source_image_path, $logo_image_path, $left_aligne
 	$text_y = $image_height - $padding;
 	
 	// Draw the bottom rectangle 
-	$rectangle_color = imagecolorallocatealpha($im, $rectangle_colors[0], $rectangle_colors[1], $rectangle_colors[2], 63); // (127*$rectangle_opacity_percent)/100
+	$rectangle_color = imagecolorallocatealpha($im, $rectangle_colors[0], $rectangle_colors[1], $rectangle_colors[2], (127*$rectangle_opacity_percent)/100);
 	imagealphablending($im, true);
-	imagefilledrectangle($im, 0, $image_height - $rectangle_height - 50, $image_width, $image_height, $rectangle_color);
+	imagefilledrectangle($im, 0, $image_height - $rectangle_height, $image_width, $image_height, $rectangle_color);
+	
 	imagecolordeallocate($im, $rectangle_color);
 	
 	$text_color = imagecolorallocate($im, $text_colors[0], $text_colors[1], $text_colors[2]);
